@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload large files</title>
+</head>
+<body>  
+    <input type="file" id="file" accept="image/*" multiple>
+    <script>
+        const chunkSize = 1024 * 140 * 1;
+        const fileInput = document.getElementById('file');
+        fileInput.onchange = (e) => {
+            const file = fileInput.files[0];
+            const chunks = [];
+            let startPos = 0;
+            while (startPos < file.size) {
+                chunks.push(file.slice(startPos, startPos + chunkSize));
+                startPos += chunkSize;
+            }
+            if (!chunks.length) {
+                return;
+            }
+            chunks.map((ck, index) => {
+                const files = e.target.files;
+                const formData = new FormData();
+                formData.set('name', file.name + '-' + index);
+                formData.append('files', ck);
+                fetch('http://localhost:3000/upload-large', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log("result >>>", data);
+                })
+                .catch(err => {
+                    console.log("error >>>", err);
+                })
+            })
+        }
+    </script>
+</body>
+</html>

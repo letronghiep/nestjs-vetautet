@@ -1,12 +1,82 @@
-import { Controller, Get } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, UploadedFile, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
-
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { storage } from './oss';
+import * as path from 'path';
+import * as fs from 'fs';
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  // merge file
+  @Get('merge-file')
+  mergeFile(@Query('file') name: string) {
+    const nameDir = 'uploads/' + name;
+    // read file
+    const files = fs.readdirSync(nameDir);
+    let startPos = 0, countFile = 0;
+    files.map(file => {
+      // get path full
+      const filePath = nameDir + '/' + file;
+      const streamFile = fs.createReadStream(filePath);
+      streamFile.pipe(fs.createWriteStream('uploads/merge/' + name, {
+        start: startPos
+      }) ).on('finish', () => {
+        countFile++;
+        if (files.length === countFile) {
+          fs.rm(nameDir, {
+            recursive: true
+          }, () => {})
+        }
+          });
+      startPos += fs.statSync(filePath).size;
+    })
+  }
+  
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+  @Post('upload-large')
+  @UseInterceptors(FilesInterceptor('files', 20, {
+    dest: 'uploads',
+  }))
+  uploadLargeFile(@UploadedFiles() files: Array<Express.Multer.File>, @Body() body: {name: string}) {
+    console.log("files >>>", files);
+    console.log("body >>>", body);
+    const fileName = body.name.match(/(.+)-\d+$/)?.[1] ?? body.name;
+    const nameDir = 'uploads/chunks-' + fileName;
+
+    // make file
+    if (!fs.existsSync(nameDir)) {
+      fs.mkdirSync(nameDir);
+    }
+
+  // copy files
+  fs.cpSync(files[0].path, nameDir + '/' + body.name);
+  // remove 
+  fs.rmSync(files[0].path);
+    return files;
+  }
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file', {
+    dest: 'uploads',
+    storage: storage,
+    limits: {
+      fileSize: 1024 * 1024 * 3,
+    },
+    fileFilter: (req, file, cb) => {
+      // estName
+      const extName = path.extname(file.originalname);
+      if (['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'].includes(extName)) {
+        cb(null, true);
+      } else {
+        cb(new BadRequestException('Only images are allowed'), false);
+      }
+    }
+  }))
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log("upload file ->>>", file.path);
+    return file.path;
   }
 }
