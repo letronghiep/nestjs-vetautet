@@ -4,10 +4,11 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { storage } from './oss';
 import * as path from 'path';
 import * as fs from 'fs';
+import { MyLogger } from './logger/my-logger';
 @Controller()
 export class AppController {
 
-  private logger = new Logger()
+  private logger = new MyLogger()
 
   constructor(private readonly appService: AppService) {}
 
@@ -38,11 +39,11 @@ export class AppController {
   
   @Get()
   getHello(): string {
-    this.logger.log('1211', AppController.name);
-    this.logger.warn('222', AppController.name);
-    this.logger.debug('333', AppController.name);
-    this.logger.verbose('444', AppController.name);
-    this.logger.error('555', AppController.name);
+    this.logger.log('hahaha', AppController.name);
+    // this.logger.warn('222', AppController.name);
+    // this.logger.debug('333', AppController.name);
+    // this.logger.verbose('444', AppController.name);
+    // this.logger.error('555', AppController.name);
     return this.appService.getHello();
   }
   @Post('upload-large')

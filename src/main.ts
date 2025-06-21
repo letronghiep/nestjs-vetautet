@@ -7,9 +7,9 @@ import { MyLoggerDev } from './logger/my-logger.dev';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     // logger: new MyLogger(),
-    bufferLogs: true,
+    // bufferLogs: true,
   });
-  app.useLogger(app.get(MyLoggerDev));
+  app.useLogger(new MyLogger());
   app.useStaticAssets(join(__dirname, '../uploads'), {prefix: '/uploads'});
   app.enableCors();
   await app.listen(process.env.PORT ?? 3000);
