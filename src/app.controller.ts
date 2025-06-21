@@ -4,13 +4,17 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { storage } from './oss';
 import * as path from 'path';
 import * as fs from 'fs';
+import { MyLoggerDev } from './logger/my-logger.dev';
 import { MyLogger } from './logger/my-logger';
 @Controller()
 export class AppController {
 
   private logger = new MyLogger()
+  members: String[];
 
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {
+    this.members = [];
+  }
 
   // merge file
   @Get('merge-file')
@@ -40,6 +44,9 @@ export class AppController {
   @Get()
   getHello(): string {
     this.logger.log('hahaha', AppController.name);
+    // for (let i = 0; i < 1000000; i++) {
+    //   this.members.push('member ' + i);
+    // }
     // this.logger.warn('222', AppController.name);
     // this.logger.debug('333', AppController.name);
     // this.logger.verbose('444', AppController.name);
